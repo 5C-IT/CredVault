@@ -373,7 +373,7 @@ def process_request():
              e=user_email, a=app_name, ac="access_requested")
     conn.close()
 
-    threading.Thread(target=send_admin_notification, args=(user_email, app_name, request_id), daemon=True).start()
+    send_admin_notification(user_email, app_name, request_id)
     return jsonify({"success": True, "message": f"Request received. Admin will review and send credentials to {user_email} shortly."})
 
 
@@ -500,9 +500,7 @@ def approve_request(request_id):
 
     conn.close()
     portal_link = f"{os.getenv('PORTAL_BASE_URL')}/access/{token_id}"
-    threading.Thread(target=send_credentials_email,
-                     args=(user_email, app_name, app_url, psk, portal_link),
-                     daemon=True).start()
+    send_credentials_email(user_email, app_name, app_url, psk, portal_link)
     return jsonify({"success": True, "path": "credentials", "message": f"Approved. Credentials sent to {user_email}"})
 
 
@@ -901,12 +899,10 @@ def add_access_grant():
     conn.close()
 
     if will_email:
-        threading.Thread(
-            target=send_individual_credentials_email,
-            args=(target_email, data['user_name'], data['app_name'],
-                  indiv_app_url, indiv_username, indiv_password),
-            daemon=True
-        ).start()
+        send_individual_credentials_email(
+    target_email, data['user_name'], data['app_name'],
+    indiv_app_url, indiv_username, indiv_password
+).start()
 
     return jsonify({
         "success": True,
@@ -1193,7 +1189,7 @@ def user_request_access():
              e=user_email, a=app_name, ac="access_requested")
     conn.close()
 
-    threading.Thread(target=send_admin_notification, args=(user_email, app_name, request_id), daemon=True).start()
+    send_admin_notification(user_email, app_name, request_id)
     return jsonify({"success": True})
 
 
@@ -1646,7 +1642,7 @@ def _ext_init_tables():
         print(f"[ext] table init failed: {e}")
 
 
-_ext_init_tables()
+##_ext_init_tables()
 
 # ── Variant support: idempotent column additions ────────────────────────────
 def _variant_init():
@@ -1692,12 +1688,12 @@ def _variant_init():
     except Exception as e:
         print(f"[variant] migration failed: {e}")
 
-_variant_init()
+##_variant_init()
 
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 
-init_db()
+##init_db()
 
 if __name__ == "__main__":
     print("CredsVault running on http://localhost:5000")
