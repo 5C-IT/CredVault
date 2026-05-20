@@ -1645,7 +1645,7 @@ def _ext_init_tables():
         print(f"[ext] table init failed: {e}")
 
 
-##_ext_init_tables()
+_ext_init_tables()
 
 # ── Variant support: idempotent column additions ────────────────────────────
 def _variant_init():
@@ -1691,12 +1691,12 @@ def _variant_init():
     except Exception as e:
         print(f"[variant] migration failed: {e}")
 
-##_variant_init()
+_variant_init()
 
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 
-##init_db()
+init_db()
 
 if __name__ == "__main__":
     print("CredsVault running on http://localhost:5000")
