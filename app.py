@@ -15,6 +15,9 @@ from authlib.integrations.flask_client import OAuth
 load_dotenv()
 
 app = Flask(__name__, template_folder="templates")
+@app.route('/')
+def landing():
+      return render_template('landing.html')
 app.secret_key = os.getenv("SECRET_KEY", "credsvault_5cnetwork_2024_xK9mP")
 
 oauth = OAuth(app)

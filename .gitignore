@@ -1,0 +1,32 @@
+$content = @'
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.production
+*.env
+
+# Firebase / Google credentials
+serviceAccountKey.json
+*firebase*.json
+*adminsdk*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Vercel
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+'@
+[System.IO.File]::WriteAllText("$PWD\.gitignore", $content)
