@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Public URL for the 5C logo (lives in the Flask static folder, served by Vercel)
+LOGO_URL = os.getenv("LOGO_URL", "https://cred-vault-two.vercel.app/static/5c-default.png")
+
+
 def send_credentials_email(to_email, app_name, app_url, psk, portal_link):
     print(f"[EMAIL] Attempting to send to {to_email} for {app_name}")
 
@@ -88,8 +92,8 @@ def send_individual_credentials_email(to_email, user_name, app_name, app_url, us
             <td style="padding:22px 32px;vertical-align:middle">
               <span style="color:#C9A961;font-size:12px;letter-spacing:0.22em;font-weight:700;font-family:Arial,Helvetica,sans-serif">APPLICATIONS TEAM</span>
             </td>
-            <td align="right" style="padding:22px 32px;vertical-align:middle">
-              <span style="color:#E0413B;font-size:22px;font-weight:800;font-family:Arial,Helvetica,sans-serif;letter-spacing:-0.02em">5C</span>
+            <td align="right" style="padding:18px 32px;vertical-align:middle">
+              <img src="{LOGO_URL}" alt="5C Network" width="56" style="display:inline-block;border:0;outline:none;text-decoration:none;height:auto;max-width:56px"/>
             </td>
           </tr>
         </table>
@@ -138,7 +142,7 @@ def send_individual_credentials_email(to_email, user_name, app_name, app_url, us
           </p>
 
           <p style="font-style:italic;color:#888;font-size:12px;line-height:1.6;margin:0 0 28px 0">
-            If you did not request this access or have any questions, please reach out to us at
+            If you face any issue, kindly contact
             <a href="mailto:itsupport@5cnetwork.com" style="color:#888;text-decoration:underline">itsupport@5cnetwork.com</a>.
           </p>
 
@@ -148,9 +152,6 @@ def send_individual_credentials_email(to_email, user_name, app_name, app_url, us
           <!-- Signature -->
           <p style="font-size:14px;color:#444;margin:0 0 8px 0">Regards,</p>
           <p style="font-size:20px;color:#1a1a1a;font-weight:700;margin:0 0 4px 0">Applications Team</p>
-          <p style="color:#C9A961;font-size:11px;letter-spacing:0.14em;font-weight:700;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;margin:0 0 6px 0">
-            itsupport@5cnetwork.com
-          </p>
           <p style="color:#666;font-size:13px;margin:0">5C Network INDIA Pvt Ltd</p>
         </div>
 
