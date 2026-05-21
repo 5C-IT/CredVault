@@ -137,15 +137,6 @@
     .pending-time{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;letter-spacing:0.06em}
     .pending-actions{display:flex;gap:8px}
     .no-pending{text-align:center;padding:28px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius);background:rgba(79,227,155,0.03)}
-    .app-users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0}
-    .app-users-card{padding:16px 18px;border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);transition:background 0.14s}
-    .app-users-card:hover{background:var(--surface2)}
-    .app-users-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-    .app-users-avatar{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-    .app-users-name{font-size:13px;font-weight:600;flex:1}
-    .app-users-count{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--cyan)}
-    .app-users-list{display:flex;flex-wrap:wrap;gap:6px}
-    .user-chip{font-size:10px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--text-dim)}
     ::-webkit-scrollbar{width:10px;height:10px}
     ::-webkit-scrollbar-track{background:var(--bg)}
     ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:999px;border:2px solid var(--bg)}
@@ -168,6 +159,11 @@
     .field-val{font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text)}
     .field-val.link{color:var(--cyan);text-decoration:none}
     .field-val.dim{color:var(--muted);font-size:11px}
+    .label-opt{color:var(--muted);text-transform:none;letter-spacing:normal;font-size:9px;margin-left:4px}
+    .pwd-wrap{position:relative}
+    .pwd-wrap .inp{padding-right:42px;width:100%}
+    .pwd-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:16px;user-select:none;line-height:1}
+    .pwd-eye:hover{color:var(--cyan)}
   </style>
 </head>
 <body>
@@ -329,14 +325,27 @@
   document.getElementById('modalCloseBtn').addEventListener('click',closeModal);
   document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
+  // Generic eye-toggle for any password input by id
+  function togglePwdById(inputId, eyeEl) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password') { inp.type = 'text'; eyeEl.textContent = '🙈'; }
+    else { inp.type = 'password'; eyeEl.textContent = '👁'; }
+  }
+
   /* ── ADD APP ── */
   document.getElementById('addAppBtn').addEventListener('click',function(){
     openModal('Add New Application',
       `<div class="field"><div class="field-label">App Name *</div><input id="fName" class="inp" style="width:100%" placeholder="e.g. Slack"></div>
        <div class="field"><div class="field-label">Label (optional)</div><input id="fLabel" class="inp" style="width:100%" placeholder="e.g. Plus account, Team 1"><div style="font-size:10px;color:var(--muted);margin-top:4px">Use a label when you have multiple credentials for the same app.</div></div>
        <div class="field"><div class="field-label">URL *</div><input id="fUrl" class="inp" style="width:100%" placeholder="https://..."></div>
-       <div class="field"><div class="field-label">Username / Email *</div><input id="fUser" class="inp" style="width:100%" placeholder="user@5cnetwork.com"></div>
-       <div class="field"><div class="field-label">Password *</div><input id="fPass" type="password" class="inp" style="width:100%"></div>`,
+       <div class="field"><div class="field-label">Username / Email <span class="label-opt">— optional</span></div><input id="fUser" class="inp" style="width:100%" placeholder="user@5cnetwork.com"></div>
+       <div class="field"><div class="field-label">Password <span class="label-opt">— optional</span></div>
+         <div class="pwd-wrap">
+           <input id="fPass" type="password" class="inp" placeholder="leave blank if not needed">
+           <span class="pwd-eye" onclick="togglePwdById('fPass', this)">👁</span>
+         </div>
+       </div>`,
       `<button class="btn" onclick="closeModal()">Cancel</button>
        <button class="btn btn-primary" onclick="submitApp()">Add to Vault</button>`);
   });
@@ -346,7 +355,7 @@
     const url=document.getElementById('fUrl').value.trim();
     const user=document.getElementById('fUser').value.trim();
     const pass=document.getElementById('fPass').value;
-    if(!name||!url||!user||!pass){alert('Name, URL, username and password are required.');return;}
+    if(!name||!url){alert('App Name and URL are required.');return;}
     try{await post('/admin/applications',{name,label,url,username:user,password:pass});closeModal();loadAll();}
     catch(e){alert('Error: '+e.message);}
   }
@@ -367,7 +376,7 @@
        ${labelRow}
        <div class="field"><div class="field-label">URL</div><a class="field-val link" href="${app.url||'#'}" target="_blank">${app.url||'—'}</a></div>
        <div class="field"><div class="field-label">Username</div><div class="field-val">${app.username||'—'}</div></div>
-       <div class="field"><div class="field-label">Password</div><div class="field-val">••••••••••</div></div>
+       <div class="field"><div class="field-label">Password</div><div class="field-val">${app.password?'••••••••••':'—'}</div></div>
        <div class="field"><div class="field-label">Document ID</div><div class="field-val dim">${app.id}</div></div>`,
       `<button class="btn btn-danger" onclick="confirmDeleteApp('${app.id}','${safeName}')">Delete</button>
        <button class="btn btn-primary" onclick="editApp('${app.id}')">Edit</button>
@@ -389,11 +398,14 @@
          <div style="font-size:10px;color:var(--muted);margin-top:4px">Use a label when you have multiple credentials for the same app.</div></div>
        <div class="field"><div class="field-label">URL *</div>
          <input id="eUrl" class="inp" style="width:100%" value="${esc(app.url)}"></div>
-       <div class="field"><div class="field-label">Username / Email *</div>
+       <div class="field"><div class="field-label">Username / Email <span class="label-opt">— optional</span></div>
          <input id="eUser" class="inp" style="width:100%" value="${esc(app.username)}"></div>
-       <div class="field"><div class="field-label">Password (leave blank to keep current)</div>
+       <div class="field"><div class="field-label">Password <span class="label-opt">— optional, leave blank to keep current</span></div>
          <div style="display:flex;gap:6px;align-items:stretch">
-           <input id="ePass" type="password" class="inp" style="flex:1" placeholder="•••••••••• (unchanged)">
+           <div class="pwd-wrap" style="flex:1">
+             <input id="ePass" type="password" class="inp" placeholder="•••••••••• (unchanged)">
+             <span class="pwd-eye" onclick="togglePwdById('ePass', this)">👁</span>
+           </div>
            <button class="btn" type="button" id="eShowBtn" style="white-space:nowrap" onclick="togglePeek()">Show current</button>
          </div>
          <div id="ePeek" style="display:none;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);word-break:break-all"></div>
@@ -425,7 +437,7 @@
     const url =document.getElementById('eUrl').value.trim();
     const user=document.getElementById('eUser').value.trim();
     const pass=document.getElementById('ePass').value;
-    if(!name||!url||!user){alert('Name, URL and username are required.');return;}
+    if(!name||!url){alert('App Name and URL are required.');return;}
     try{
       const body = { name, label, url, username: user };
       if (pass) body.password = pass;

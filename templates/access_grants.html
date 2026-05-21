@@ -87,6 +87,16 @@
     .email-toggle input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--violet);flex-shrink:0;margin:0}
     .email-toggle-label{font-size:12px;color:var(--text);cursor:pointer;line-height:1.4}
     .email-toggle-label .em-hint{display:block;font-size:11px;color:var(--text-dim);margin-top:2px}
+    /* Password field with action buttons */
+    .pwd-field{position:relative}
+    .pwd-field input{padding-right:108px;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+    .pwd-actions{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:3px}
+    .pwd-actions button{background:rgba(155,123,255,0.08);border:1px solid rgba(155,123,255,0.25);color:var(--text-dim);width:30px;height:28px;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0}
+    .pwd-actions button:hover{color:var(--violet);border-color:var(--violet);background:rgba(155,123,255,0.15)}
+    .pwd-actions button.copied{color:var(--green);border-color:var(--green);background:var(--green-dim)}
+    /* Export button */
+    .btn-export{background:linear-gradient(135deg,rgba(79,227,155,0.18),rgba(88,230,217,0.18));border:1px solid rgba(79,227,155,0.35);color:var(--green);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+    .btn-export:hover{background:linear-gradient(135deg,rgba(79,227,155,0.28),rgba(88,230,217,0.28));transform:translateY(-1px)}
     @media(max-width:900px){.grid-2{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}}
   </style>
 </head>
@@ -182,8 +192,15 @@
                 <input type="text" id="indivUsername" placeholder="user@example.com" autocomplete="off"/>
               </div>
               <div class="field">
-                <label>Password</label>
-                <input type="text" id="indivPassword" placeholder="••••••••" autocomplete="off"/>
+                <label>Password <span style="color:var(--violet);text-transform:none;letter-spacing:normal;font-size:9px">— auto-generated</span></label>
+                <div class="pwd-field">
+                  <input type="password" id="indivPassword" placeholder="••••••••" autocomplete="off"/>
+                  <div class="pwd-actions">
+                    <button type="button" onclick="regenIndivPwd()" title="Generate new password">🔄</button>
+                    <button type="button" onclick="toggleIndivPwd(this)" title="Show / hide">👁</button>
+                    <button type="button" onclick="copyIndivPwd(this)" title="Copy to clipboard">📋</button>
+                  </div>
+                </div>
               </div>
               <div class="field" style="margin-bottom:0">
                 <label>App / Website URL</label>
@@ -222,7 +239,10 @@
       <div class="card">
         <div class="card-head">
           <div class="card-title">All Access Records</div>
-          <span id="recordCount" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)"></span>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span id="recordCount" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)"></span>
+            <button class="btn-export" onclick="exportAllRecords()" title="Download as CSV (opens in Excel)">⬇ Export to Excel</button>
+          </div>
         </div>
         <div class="search-bar" style="padding:14px 20px 0">
           <input type="text" id="recordSearch" placeholder="search by name, app, type..." oninput="filterRecords()"/>
@@ -274,6 +294,119 @@
   async function del(path){ const r = await fetch(path,{method:'DELETE'}); return r.json(); }
 
   const fmtDate = d => { if(!d) return '—'; const dt=new Date(d); return isNaN(dt)?'—':dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+
+  // --- Password helpers (Individual ID box) ----------------------------------
+  function generateStrongPassword() {
+    const upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I, O for clarity
+    const lower   = 'abcdefghijkmnopqrstuvwxyz';  // no l
+    const nums    = '23456789';                   // no 0, 1
+    const special = '!@#$%^&*-_=+';
+    const pools = [upper, lower, nums, special];
+    // Guarantee one from each pool, then fill remaining 4 from all pools
+    let chars = pools.map(p => p[Math.floor(Math.random() * p.length)]);
+    const all = upper + lower + nums + special;
+    while (chars.length < 8) {
+      chars.push(all[Math.floor(Math.random() * all.length)]);
+    }
+    // Fisher-Yates shuffle
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
+  }
+  function regenIndivPwd() {
+    const inp = document.getElementById('indivPassword');
+    inp.value = generateStrongPassword();
+    inp.type = 'text';  // briefly reveal so admin can see the new one
+    setTimeout(() => { inp.type = 'password'; }, 1200);
+  }
+  function toggleIndivPwd(btn) {
+    const inp = document.getElementById('indivPassword');
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+  async function copyIndivPwd(btn) {
+    const inp = document.getElementById('indivPassword');
+    if (!inp.value) return;
+    try {
+      await navigator.clipboard.writeText(inp.value);
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+    } catch (e) {
+      // Fallback for older browsers
+      inp.type = 'text';
+      inp.select();
+      document.execCommand('copy');
+      inp.type = 'password';
+    }
+  }
+
+  // --- CSV export ------------------------------------------------------------
+  function exportToCSV(rows, headers, filename) {
+    if (!rows || !rows.length) { alert('Nothing to export.'); return; }
+    const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    const lines = [headers.map(esc).join(',')];
+    rows.forEach(r => lines.push(r.map(esc).join(',')));
+    // BOM so Excel reads UTF-8 correctly
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportUserReport(displayName, data) {
+    const headers = ['Application','Access Type','Status','Granted By','Date','Notes'];
+    const rows = data.map(d => [
+      d.app_name || '',
+      d.access_type || '',
+      d.status || 'active',
+      d.granted_by || '',
+      fmtDate(d.granted_at),
+      d.notes || ''
+    ]);
+    const safe = displayName.replace(/[^a-z0-9]+/gi, '_');
+    exportToCSV(rows, headers, `report_user_${safe}_${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function exportAppReport(appName, data) {
+    const headers = ['Employee','Designation','Department','Email','Access Type','Status','Date','Notes'];
+    const rows = data.map(d => [
+      d.user_name || '',
+      d.user_designation || '',
+      d.user_department || '',
+      d.user_email || '',
+      d.access_type || '',
+      d.status || 'active',
+      fmtDate(d.granted_at),
+      d.notes || ''
+    ]);
+    const safe = appName.replace(/[^a-z0-9]+/gi, '_');
+    exportToCSV(rows, headers, `report_app_${safe}_${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function exportAllRecords() {
+    const headers = ['Employee','Designation','Department','Email','Application','Access Type','Granted By','Date','Notes'];
+    const rows = allGrants.map(g => [
+      g.user_name || '',
+      g.user_designation || '',
+      g.user_department || '',
+      g.user_email || '',
+      g.app_name || '',
+      g.access_type || '',
+      g.granted_by || '',
+      fmtDate(g.granted_at),
+      g.notes || ''
+    ]);
+    exportToCSV(rows, headers, `all_access_records_${new Date().toISOString().slice(0,10)}.csv`);
+  }
 
   function switchTab(tab) {
     document.querySelectorAll('.page-tab').forEach((t,i)=>t.classList.toggle('active',['grant','records','reports'][i]===tab));
@@ -567,8 +700,13 @@
         : '';
       el.innerHTML = `
         <div class="report-user-card">
-          <div class="report-user-name">${q}</div>
-          <div class="report-user-meta">${user.user_designation||''} ${user.user_department?'· '+user.user_department:''}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+            <div>
+              <div class="report-user-name">${q}</div>
+              <div class="report-user-meta">${user.user_designation||''} ${user.user_department?'· '+user.user_department:''}</div>
+            </div>
+            <button class="btn-export" onclick='exportUserReport(${JSON.stringify(q)}, ${JSON.stringify(data).replace(/'/g,"&apos;")})' title="Download as CSV (opens in Excel)">⬇ Export to Excel</button>
+          </div>
           <div class="stat-pills">
             <div class="stat-pill">Total Apps: <span>${data.length}</span></div>
             <div class="stat-pill">Credentials: <span>${credCount}</span></div>
@@ -647,8 +785,13 @@
       const idCount = data.filter(d=>d.access_type==='Individual ID').length;
       el.innerHTML = `
         <div class="report-user-card">
-          <div class="report-user-name">${q}</div>
-          <div class="report-user-meta">Application Access Report</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+            <div>
+              <div class="report-user-name">${q}</div>
+              <div class="report-user-meta">Application Access Report</div>
+            </div>
+            <button class="btn-export" onclick='exportAppReport(${JSON.stringify(q)}, ${JSON.stringify(data).replace(/'/g,"&apos;")})' title="Download as CSV (opens in Excel)">⬇ Export to Excel</button>
+          </div>
           <div class="stat-pills">
             <div class="stat-pill">Total Users: <span>${data.length}</span></div>
             <div class="stat-pill">Credentials: <span>${credCount}</span></div>
@@ -680,7 +823,10 @@
     document.getElementById('grantType').addEventListener('change', function(){
       const isIndiv = this.value === 'Individual ID';
       document.getElementById('individualCredsBox').style.display = isIndiv ? 'block' : 'none';
-      if (!isIndiv) {
+      if (isIndiv) {
+        // Auto-generate a unique strong password each time Individual ID is picked
+        document.getElementById('indivPassword').value = generateStrongPassword();
+      } else {
         document.getElementById('indivUsername').value = '';
         document.getElementById('indivPassword').value = '';
         document.getElementById('indivAppUrl').value = '';
