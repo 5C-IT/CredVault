@@ -147,12 +147,12 @@
               </div>
             </div>
 
-            <!-- Email field — shown in manual mode, or always editable when from autocomplete -->
-            <div class="field" id="manualEmailField" style="display:none">
-              <label>Email *</label>
+            <!-- Email field — always visible, OPTIONAL. Only required when "Send credentials email" is checked. -->
+            <div class="field">
+              <label>Email <span style="color:var(--muted);text-transform:none;letter-spacing:normal;font-size:9px">— optional</span></label>
               <input type="email" id="grantEmailInput" placeholder="user@5cnetwork.com" autocomplete="off"/>
               <div style="margin-top:6px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">
-                The credentials email (if any) will be sent here.
+                Only fill this if you want to send a credentials email. Otherwise, leave blank.
               </div>
             </div>
 
@@ -307,14 +307,12 @@
     const deptDiv   = document.getElementById('grantDept');
     const desigInp  = document.getElementById('grantDesigInput');
     const deptInp   = document.getElementById('grantDeptInput');
-    const emailFld  = document.getElementById('manualEmailField');
     const hint      = document.getElementById('manualHint');
     if (on) {
       desigDiv.style.display = 'none';
       deptDiv.style.display  = 'none';
       desigInp.style.display = 'block';
       deptInp.style.display  = 'block';
-      emailFld.style.display = 'block';
       hint.style.display = 'none';
       selectedUser = null;
     } else {
@@ -324,8 +322,6 @@
       deptInp.style.display  = 'none';
       desigInp.value = '';
       deptInp.value  = '';
-      emailFld.style.display = 'none';
-      document.getElementById('grantEmailInput').value = '';
     }
   }
 
@@ -342,6 +338,7 @@
       selectedUser = null;
       document.getElementById('grantDesig').textContent = '—';
       document.getElementById('grantDept').textContent = '—';
+      document.getElementById('grantEmailInput').value = '';
     }
     if (!q || q.length < 2) { list.style.display='none'; hint.style.display='none'; return; }
     const matches = allUsers.filter(u => u.name.toLowerCase().includes(q.toLowerCase())).slice(0, 8);
@@ -364,6 +361,7 @@
     document.getElementById('grantUserName').value = user.name;
     document.getElementById('grantDesig').textContent = user.designation || '—';
     document.getElementById('grantDept').textContent = user.department || '—';
+    document.getElementById('grantEmailInput').value = user.email || '';
     document.getElementById('autocompleteList').style.display = 'none';
     document.getElementById('manualHint').style.display = 'none';
   }
@@ -390,11 +388,10 @@
 
     let designation = selectedUser?.designation || '';
     let department  = selectedUser?.department  || '';
-    let userEmail   = selectedUser?.email       || '';
+    const userEmail = document.getElementById('grantEmailInput').value.trim();
     if (manualMode) {
       designation = document.getElementById('grantDesigInput').value.trim();
       department  = document.getElementById('grantDeptInput').value.trim();
-      userEmail   = document.getElementById('grantEmailInput').value.trim();
     }
 
     // Individual ID: collect optional credential fields + email opt-in
@@ -417,9 +414,7 @@
         return;
       }
       if (sendEmail && !userEmail) {
-        errorEl.textContent = manualMode
-          ? 'Please enter the user\'s email address — the credentials email needs a destination.'
-          : 'The selected user has no email on file. Pick a user with an email, or use Enter manually to specify one.';
+        errorEl.textContent = 'Please enter the user\'s email address — the credentials email needs a destination.';
         errorEl.style.display = 'block';
         return;
       }
@@ -453,6 +448,7 @@
       document.getElementById('grantUserName').value = '';
       document.getElementById('grantDesig').textContent = '—';
       document.getElementById('grantDept').textContent = '—';
+      document.getElementById('grantEmailInput').value = '';
       document.getElementById('grantApp').value = '';
       document.getElementById('grantType').value = '';
       document.getElementById('grantNotes').value = '';
